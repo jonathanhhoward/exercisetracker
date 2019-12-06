@@ -5,23 +5,29 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 
 const mongoose = require('mongoose')
-mongoose.connect(process.env.MLAB_URI || 'mongodb://localhost/exercise-track' )
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true, useUnifiedTopology: true
+}).catch(err => console.error('connection error:', err))
+
+mongoose.connection
+  .on('error', console.error.bind(console, 'connection error:'))
+  .once('open', () => {
+    // add database instructions
+  })
 
 app.use(cors())
 
-app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
-
 
 app.use(express.static('public'))
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
-});
-
+})
 
 // Not found middleware
 app.use((req, res, next) => {
-  return next({status: 404, message: 'not found'})
+  return next({ status: 404, message: 'not found' })
 })
 
 // Error Handling middleware
@@ -43,6 +49,10 @@ app.use((err, req, res, next) => {
     .send(errMessage)
 })
 
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Your app is listening on port ' + listener.address().port)
+const server = app.listen(process.env.PORT || 3000, () => {
+  console.log(
+    'Server listening at http://%s:%s',
+    server.address().host,
+    server.address().port
+  )
 })
