@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
@@ -12,7 +14,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 mongoose.connection
   .on('error', console.error.bind(console, 'connection error:'))
   .once('open', () => {
-    // add database instructions
+    console.log('Mongoose connected')
   })
 
 app.use(cors())
@@ -52,7 +54,7 @@ app.use((err, req, res, next) => {
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(
     'Server listening at http://%s:%s',
-    server.address().host,
+    server.address().host || 'localhost',
     server.address().port
   )
 })
