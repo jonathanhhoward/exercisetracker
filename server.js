@@ -7,6 +7,17 @@ const mongoose = require('mongoose')
 
 const app = express()
 
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
+
+app.use(cors())
+
+app.use(express.static('public'))
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/views/index.html')
+})
+
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -18,6 +29,7 @@ mongoose.connection
     console.log('Mongoose connected')
     const userSchema = new mongoose.Schema({ username: String })
     const User = mongoose.model('User', userSchema)
+
     app.post('/api/exercise/new-user', (req, res) => {
       const username = req.body.username
       User.findOne({ username: username }, (err, found) => {
