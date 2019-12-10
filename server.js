@@ -41,18 +41,15 @@ mongoose.connection
         })
       })
     })
+
+    app.get('/api/exercise/users', (req, res) => {
+      User.find({}, (err, users) => {
+        if (err) return console.error(err)
+        if (!users) return res.send('no users found')
+        res.json(users)
+      })
+    })
   })
-
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
-
-app.use(cors())
-
-app.use(express.static('public'))
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-})
 
 // app.use((req, res, next) => {
 //   return next({ status: 404, message: 'not found' })
