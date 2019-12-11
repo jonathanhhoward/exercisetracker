@@ -27,17 +27,19 @@ mongoose.connection
   .on('error', console.error.bind(console, 'connection error:'))
   .once('open', () => {
     console.log('Mongoose connected')
-    const userSchema = new mongoose.Schema({ username: String })
-    const User = mongoose.model('User', userSchema)
+    const User = mongoose.model(
+      'User',
+      new mongoose.Schema({ username: String })
+    )
 
     app.post('/api/exercise/new-user', (req, res) => {
       const username = req.body.username
-      User.findOne({ username: username }, (err, found) => {
+      User.findOne({ username: username }, (err, user) => {
         if (err) return console.error(err)
-        if (found) return res.send('username already taken')
-        User.create({username: username}, (err, user) => {
+        if (user) return res.send('username already taken')
+        User.create({username: username}, (err, newUser) => {
           if (err) return console.error(err)
-          res.json({ username: user.username, _id: user._id })
+          res.json({ username: newUser.username, _id: newUser._id })
         })
       })
     })
@@ -45,7 +47,7 @@ mongoose.connection
     app.get('/api/exercise/users', (req, res) => {
       User.find({}, (err, users) => {
         if (err) return console.error(err)
-        if (!users) return res.send('no users found')
+        if (!users.length) return res.send('no users found')
         res.json(users)
       })
     })
