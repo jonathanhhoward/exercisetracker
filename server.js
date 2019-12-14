@@ -7,17 +7,6 @@ const mongoose = require('mongoose')
 
 const app = express()
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
-
-app.use(cors())
-
-app.use(express.static('public'))
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-})
-
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -25,52 +14,114 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 mongoose.connection
   .on('error', console.error.bind(console, 'connection error:'))
-  .once('open', () => {
-    console.log('Mongoose connected')
-    const User = mongoose.model(
-      'User',
-      new mongoose.Schema({ username: String })
-    )
+  .once('open', () => console.log('Mongoose connected'))
 
-    app.post('/api/exercise/new-user', (req, res) => {
-      const username = req.body.username
-      User.findOne({ username: username }, (err, user) => {
-        if (err) return console.error(err)
-        if (user) return res.send('username already taken')
-        User.create({username: username}, (err, newUser) => {
-          if (err) return console.error(err)
-          res.json({ username: newUser.username, _id: newUser._id })
-        })
-      })
+app.use(cors())
+
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
+
+app.use(express.static('public'))
+app.get('/', (req, res) => res.sendFile(__dirname + '/views/index.html'))
+
+const User = mongoose.model(
+  'User',
+  new mongoose.Schema({
+    username: {
+      type: String,
+      required: true,
+    }
+  })
+)
+
+const Exercise = mongoose.model(
+  'Exercise',
+  new mongoose.Schema({
+    userId: { type: String, required: true, minlength: 1 },
+    description: { type: String, required: true },
+    duration: { type: Number, required: true, min: [1, 'duration too short'] },
+    date: Date
+  })
+)
+
+app.post('/api/exercise/new-user', (req, res, next) => {
+  User.findOne({ username: req.body.username }, (err, user) => {
+    if (err) return next(err)
+    if (user) return res.status(400).send('username taken')
+    User.create({ username: req.body.username }, (err, newUser) => {
+      if (err) return next(err)
+      res.json({ username: newUser.username, _id: newUser._id })
     })
+  })
+})
 
-    app.get('/api/exercise/users', (req, res) => {
-      User.find({}, (err, users) => {
-        if (err) return console.error(err)
-        if (!users.length) return res.send('no users found')
-        res.json(users)
+app.get('/api/exercise/users', (req, res, next) => {
+  User.find({}, (err, users) => {
+    if (err) return next(err)
+    if (!users.length) return res.status(404).send('users not found')
+    res.json(users)
+  })
+})
+
+app.post('/api/exercise/add', (req, res, next) => {
+  if (!req.body.userId) return res.status(400).send('userId is required')
+  User.findById({ _id: req.body.userId }, (err, user) => {
+    if (err) return next(err)
+    if (!user) return res.status(404).send('userId not found')
+    Exercise.create({
+      ...req.body,
+      date: req.body.date ? new Date(req.body.date) : new Date()
+    }, (err, exercise) => {
+      if (err) return next(err)
+      res.json({
+        username: user.username,
+        description: exercise.description,
+        duration: exercise.duration,
+        _id: exercise.userId,
+        date: exercise.date.toDateString()
       })
     })
   })
+})
 
-// app.use((req, res, next) => {
-//   return next({ status: 404, message: 'not found' })
+// app.get('/api/exercise/log', () => {
+//   // unknown _id
+//   // {"_id":"rkR9FOppS","username":"asdfdsfdfffd","count":0,"log":[]}
+//   // {"_id":"H1DAaL3Tr","username":"Probiotic","count":2,"log":[{"description":"walk","duration":10,"date":"Wed Dec 11 2019"},{"description":"run","duration":5,"date":"Wed Dec 11 2019"}]}
+//   // {"_id":"H1DAaL3Tr","username":"Probiotic","from":"Tue Nov 05 2019","count":3,"log":[{"description":"walk","duration":1.3,"date":"Wed Dec 11 2019"},{"description":"walk","duration":10,"date":"Wed Dec 11 2019"},{"description":"run","duration":5,"date":"Wed Dec 11 2019"}]}
+//   // {"_id":"H1DAaL3Tr","username":"Probiotic","from":"Tue Jan 01 2019","count":1,"log":[{"description":"walk","duration":1.3,"date":"Wed Dec 11 2019"}]}
 // })
-//
-// app.use((err, req, res, next) => {
-//   let errCode, errMessage
-//
-//   if (err.errors) {
-//     errCode = 400
-//     const keys = Object.keys(err.errors)
-//     errMessage = err.errors[keys[0]].message
-//   } else {
-//     errCode = err.status || 500
-//     errMessage = err.message || 'Internal Server Error'
-//   }
-//   res.status(errCode).type('txt')
-//     .send(errMessage)
-// })
+
+app.get('/api/exercise/delete/:user?', (req, res, next) => {
+  if (req.params.user) {
+    User.deleteOne({ username: req.params.user }, err => {
+      if (err) next(err)
+    })
+  } else {
+    User.deleteMany({}, err => {
+      if (err) next(err)
+    })
+  }
+})
+
+app.use((req, res, next) => {
+  next({ status: 404, message: 'not found' })
+})
+
+app.use((err, req, res, next) => {
+  let errCode, errMessage
+
+  if (err.errors) {
+    errCode = 400
+    const keys = Object.keys(err.errors)
+    errMessage = err.errors[keys[0]].message
+  } else {
+    errCode = err.status || 500
+    errMessage = err.message || 'Internal Server Error'
+  }
+  res.status(errCode).type('txt')
+    .send(errMessage)
+})
 
 const server = app.listen(process.env.PORT || 3000, () => {
   console.log(
