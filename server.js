@@ -47,7 +47,7 @@ const Exercise = mongoose.model(
 app.post('/api/exercise/new-user', (req, res, next) => {
   User.findOne({ username: req.body.username }, (err, user) => {
     if (err) return next(err)
-    if (user) return res.status(400).send('username taken')
+    if (user) throw new Error('username taken')
     User.create({ username: req.body.username }, (err, newUser) => {
       if (err) return next(err)
       res.json({ username: newUser.username, _id: newUser._id })
@@ -58,16 +58,16 @@ app.post('/api/exercise/new-user', (req, res, next) => {
 app.get('/api/exercise/users', (req, res, next) => {
   User.find({}, (err, users) => {
     if (err) return next(err)
-    if (!users.length) return res.status(404).send('users not found')
+    if (!users.length) throw new Error('users not found')
     res.json(users)
   })
 })
 
 app.post('/api/exercise/add', (req, res, next) => {
-  if (!req.body.userId) return res.status(400).send('userId is required')
+  if (!req.body.userId) throw new Error('userId is required')
   User.findById({ _id: req.body.userId }, (err, user) => {
     if (err) return next(err)
-    if (!user) return res.status(404).send('userId not found')
+    if (!user) throw new Error('userId not found')
     Exercise.create({
       ...req.body,
       date: req.body.date ? new Date(req.body.date) : new Date()
