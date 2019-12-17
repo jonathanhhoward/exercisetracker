@@ -68,20 +68,22 @@ app.get('/api/exercise/users', (req, res, next) => {
 })
 
 app.post('/api/exercise/add', (req, res, next) => {
-  if (!req.body.userId) throw new Error('userId is required')
+  if (!req.body.userId) return next(new Error('userId required'))
   User.findById({ _id: req.body.userId }, (err, user) => {
     if (err) return next(err)
-    if (!user) throw new Error('userId not found')
+    if (!user) return next(new Error('user not found'))
     Exercise.create({
       ...req.body,
-      date: req.body.date ? new Date(req.body.date) : new Date()
+      date: req.body.date
+        ? new Date(req.body.date + 'T12:00:00')
+        : new Date()
     }, (err, exercise) => {
       if (err) return next(err)
       res.json({
+        _id: user._id,
         username: user.username,
         description: exercise.description,
         duration: exercise.duration,
-        _id: exercise.userId,
         date: exercise.date.toDateString()
       })
     })
