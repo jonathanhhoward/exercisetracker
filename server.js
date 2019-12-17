@@ -29,7 +29,7 @@ const User = mongoose.model(
   new mongoose.Schema({
     username: {
       type: String,
-      required: true,
+      required: true
     }
   })
 )
@@ -47,7 +47,7 @@ const Exercise = mongoose.model(
 app.post('/api/exercise/new-user', (req, res, next) => {
   User.findOne({ username: req.body.username }, (err, user) => {
     if (err) return next(err)
-    if (user) throw new Error('username taken')
+    if (user) return next(new Error('username taken'))
     User.create({ username: req.body.username }, (err, newUser) => {
       if (err) return next(err)
       res.json({ username: newUser.username, _id: newUser._id })
