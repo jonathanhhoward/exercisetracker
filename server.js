@@ -48,19 +48,23 @@ app.post('/api/exercise/new-user', (req, res, next) => {
   User.findOne({ username: req.body.username }, (err, user) => {
     if (err) return next(err)
     if (user) return next(new Error('username taken'))
-    User.create({ username: req.body.username }, (err, newUser) => {
+    user = new User({ username: req.body.username })
+    user.save(err => {
       if (err) return next(err)
-      res.json({ username: newUser.username, _id: newUser._id })
+      res.json({ username: user.username, _id: user._id })
     })
   })
 })
 
 app.get('/api/exercise/users', (req, res, next) => {
-  User.find({}, (err, users) => {
-    if (err) return next(err)
-    if (!users.length) throw new Error('users not found')
-    res.json(users)
-  })
+  User.find({})
+    .select('_id username')
+    .sort('username')
+    .exec((err, users) => {
+      if (err) return next(err)
+      if (!users.length) return next(new Error('users not found'))
+      res.json(users)
+    })
 })
 
 app.post('/api/exercise/add', (req, res, next) => {
@@ -92,16 +96,18 @@ app.post('/api/exercise/add', (req, res, next) => {
 //   // {"_id":"H1DAaL3Tr","username":"Probiotic","from":"Tue Jan 01 2019","count":1,"log":[{"description":"walk","duration":1.3,"date":"Wed Dec 11 2019"}]}
 // })
 
-app.get('/api/exercise/delete/:user?', (req, res, next) => {
-  if (req.params.user) {
-    User.deleteOne({ username: req.params.user }, err => {
-      if (err) next(err)
-    })
-  } else {
-    User.deleteMany({}, err => {
-      if (err) next(err)
-    })
-  }
+app.get('/clearusers', (req, res, next) => {
+  User.deleteMany({}, err => {
+    if (err) next(err)
+    res.send('users cleared')
+  })
+})
+
+app.get('/clearexercises', (req, res, next) => {
+  Exercise.deleteMany({}, err => {
+    if (err) return next(err)
+    res.send('exercises cleared')
+  })
 })
 
 app.use((req, res, next) => {
