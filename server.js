@@ -78,14 +78,15 @@ function exerciseTracker (mongoose) {
   })
 
   router.post('/add', (req, res, next) => {
-    if (!req.body.userId) return next(new Error('userId required'))
-    User.findById({ _id: req.body.userId }, (err, user) => {
+    const { userId, date } = req.body
+    if (!userId) return next(new Error('userId required'))
+    User.findById({ _id: userId }, (err, user) => {
       if (err) return next(err)
       if (!user) return next(new Error('user not found'))
       Exercise.create({
         ...req.body,
-        date: req.body.date
-          ? new Date(req.body.date + T120000)
+        date: date
+          ? new Date(date + T120000)
           : new Date()
       }, (err, exercise) => {
         if (err) return next(err)
