@@ -25,6 +25,8 @@ app.use(express.static('public'))
 app.get('/', (req, res) => res.sendFile(__dirname + '/views/index.html'))
 
 function exerciseTracker (mongoose) {
+  const router = require('express').Router()
+
   const User = mongoose.model(
     'User',
     new mongoose.Schema({
@@ -51,7 +53,7 @@ function exerciseTracker (mongoose) {
 
   const T120000 = 'T12:00:00'
 
-  app.post('/api/exercise/new-user', (req, res, next) => {
+  router.post('/api/exercise/new-user', (req, res, next) => {
     User.findOne({ username: req.body.username }, (err, user) => {
       if (err) return next(err)
       if (user) return next(new Error('username taken'))
@@ -63,7 +65,7 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  app.get('/api/exercise/users', (req, res, next) => {
+  router.get('/api/exercise/users', (req, res, next) => {
     User.find({})
       .select('_id username')
       .sort('username')
@@ -74,7 +76,7 @@ function exerciseTracker (mongoose) {
       })
   })
 
-  app.post('/api/exercise/add', (req, res, next) => {
+  router.post('/api/exercise/add', (req, res, next) => {
     if (!req.body.userId) return next(new Error('userId required'))
     User.findById({ _id: req.body.userId }, (err, user) => {
       if (err) return next(err)
@@ -97,7 +99,7 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  app.get('/api/exercise/log', (req, res, next) => {
+  router.get('/api/exercise/log', (req, res, next) => {
     const { userId, from, to, limit } = req.query
     if (!userId) return next(new Error('userId required'))
     User.findById({ _id: userId }, (err, user) => {
@@ -128,22 +130,24 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  app.get('/clearusers', (req, res, next) => {
+  router.get('/clearusers', (req, res, next) => {
     User.deleteMany({}, err => {
       if (err) next(err)
       res.send('users cleared')
     })
   })
 
-  app.get('/clearexercises', (req, res, next) => {
+  router.get('/clearexercises', (req, res, next) => {
     Exercise.deleteMany({}, err => {
       if (err) return next(err)
       res.send('exercises cleared')
     })
   })
+
+  return router
 }
 
-exerciseTracker(mongoose)
+app.use('/', exerciseTracker(mongoose))
 
 app.use((req, res, next) => {
   next({ status: 404, message: 'not found' })
