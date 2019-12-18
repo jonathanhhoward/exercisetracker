@@ -44,6 +44,8 @@ const Exercise = mongoose.model(
   })
 )
 
+const T120000 = 'T12:00:00'
+
 app.post('/api/exercise/new-user', (req, res, next) => {
   User.findOne({ username: req.body.username }, (err, user) => {
     if (err) return next(err)
@@ -75,7 +77,7 @@ app.post('/api/exercise/add', (req, res, next) => {
     Exercise.create({
       ...req.body,
       date: req.body.date
-        ? new Date(req.body.date + 'T12:00:00')
+        ? new Date(req.body.date + T120000)
         : new Date()
     }, (err, exercise) => {
       if (err) return next(err)
@@ -99,8 +101,8 @@ app.get('/api/exercise/log', (req, res, next) => {
     const query = Exercise.find({ userId: user._id })
     if (from || to) {
       query.where('date')
-      if (from) query.gte(from + 'T12:00:00')
-      if (to) query.lte(to + 'T12:00:00')
+      if (from) query.gte(from + T120000)
+      if (to) query.lte(to + T120000)
     }
     if (limit) query.limit(Number(limit))
     query.exec((err, exercises) => {
