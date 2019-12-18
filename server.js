@@ -24,118 +24,126 @@ app.use(bodyParser.json())
 app.use(express.static('public'))
 app.get('/', (req, res) => res.sendFile(__dirname + '/views/index.html'))
 
-const User = mongoose.model(
-  'User',
-  new mongoose.Schema({
-    username: {
-      type: String,
-      required: true
-    }
-  })
-)
-
-const Exercise = mongoose.model(
-  'Exercise',
-  new mongoose.Schema({
-    userId: { type: String, required: true, minlength: 1 },
-    description: { type: String, required: true },
-    duration: { type: Number, required: true, min: [1, 'duration too short'] },
-    date: Date
-  })
-)
-
-const T120000 = 'T12:00:00'
-
-app.post('/api/exercise/new-user', (req, res, next) => {
-  User.findOne({ username: req.body.username }, (err, user) => {
-    if (err) return next(err)
-    if (user) return next(new Error('username taken'))
-    user = new User({ username: req.body.username })
-    user.save(err => {
-      if (err) return next(err)
-      res.json({ username: user.username, _id: user._id })
+function exerciseTracker (mongoose) {
+  const User = mongoose.model(
+    'User',
+    new mongoose.Schema({
+      username: {
+        type: String,
+        required: true
+      }
     })
-  })
-})
+  )
 
-app.get('/api/exercise/users', (req, res, next) => {
-  User.find({})
-    .select('_id username')
-    .sort('username')
-    .exec((err, users) => {
-      if (err) return next(err)
-      if (!users.length) return next(new Error('users not found'))
-      res.json(users)
+  const Exercise = mongoose.model(
+    'Exercise',
+    new mongoose.Schema({
+      userId: { type: String, required: true, minlength: 1 },
+      description: { type: String, required: true },
+      duration: {
+        type: Number,
+        required: true,
+        min: [1, 'duration too short']
+      },
+      date: Date
     })
-})
+  )
 
-app.post('/api/exercise/add', (req, res, next) => {
-  if (!req.body.userId) return next(new Error('userId required'))
-  User.findById({ _id: req.body.userId }, (err, user) => {
-    if (err) return next(err)
-    if (!user) return next(new Error('user not found'))
-    Exercise.create({
-      ...req.body,
-      date: req.body.date
-        ? new Date(req.body.date + T120000)
-        : new Date()
-    }, (err, exercise) => {
+  const T120000 = 'T12:00:00'
+
+  app.post('/api/exercise/new-user', (req, res, next) => {
+    User.findOne({ username: req.body.username }, (err, user) => {
       if (err) return next(err)
-      res.json({
-        username: user.username,
-        userId: exercise.userId,
-        description: exercise.description,
-        duration: exercise.duration,
-        date: exercise.date.toDateString()
+      if (user) return next(new Error('username taken'))
+      user = new User({ username: req.body.username })
+      user.save(err => {
+        if (err) return next(err)
+        res.json({ username: user.username, _id: user._id })
       })
     })
   })
-})
 
-app.get('/api/exercise/log', (req, res, next) => {
-  const { userId, from, to, limit } = req.query
-  if (!userId) return next(new Error('userId required'))
-  User.findById({ _id: userId }, (err, user) => {
-    if (err) return next(err)
-    if (!user) return next(new Error('user not found'))
-    const query = Exercise.find({ userId: user._id })
-    if (from || to) {
-      query.where('date')
-      if (from) query.gte(from + T120000)
-      if (to) query.lte(to + T120000)
-    }
-    if (limit) query.limit(Number(limit))
-    query.exec((err, exercises) => {
+  app.get('/api/exercise/users', (req, res, next) => {
+    User.find({})
+      .select('_id username')
+      .sort('username')
+      .exec((err, users) => {
+        if (err) return next(err)
+        if (!users.length) return next(new Error('users not found'))
+        res.json(users)
+      })
+  })
+
+  app.post('/api/exercise/add', (req, res, next) => {
+    if (!req.body.userId) return next(new Error('userId required'))
+    User.findById({ _id: req.body.userId }, (err, user) => {
       if (err) return next(err)
-      res.json({
-        _id: user._id,
-        username: user.username,
-        from: from,
-        to: to,
-        count: exercises.length,
-        log: exercises.map(exercise => ({
+      if (!user) return next(new Error('user not found'))
+      Exercise.create({
+        ...req.body,
+        date: req.body.date
+          ? new Date(req.body.date + T120000)
+          : new Date()
+      }, (err, exercise) => {
+        if (err) return next(err)
+        res.json({
+          username: user.username,
+          userId: exercise.userId,
           description: exercise.description,
           duration: exercise.duration,
           date: exercise.date.toDateString()
-        }))
+        })
       })
     })
   })
-})
 
-app.get('/clearusers', (req, res, next) => {
-  User.deleteMany({}, err => {
-    if (err) next(err)
-    res.send('users cleared')
+  app.get('/api/exercise/log', (req, res, next) => {
+    const { userId, from, to, limit } = req.query
+    if (!userId) return next(new Error('userId required'))
+    User.findById({ _id: userId }, (err, user) => {
+      if (err) return next(err)
+      if (!user) return next(new Error('user not found'))
+      const query = Exercise.find({ userId: user._id })
+      if (from || to) {
+        query.where('date')
+        if (from) query.gte(from + T120000)
+        if (to) query.lte(to + T120000)
+      }
+      if (limit) query.limit(Number(limit))
+      query.exec((err, exercises) => {
+        if (err) return next(err)
+        res.json({
+          _id: user._id,
+          username: user.username,
+          from: from,
+          to: to,
+          count: exercises.length,
+          log: exercises.map(exercise => ({
+            description: exercise.description,
+            duration: exercise.duration,
+            date: exercise.date.toDateString()
+          }))
+        })
+      })
+    })
   })
-})
 
-app.get('/clearexercises', (req, res, next) => {
-  Exercise.deleteMany({}, err => {
-    if (err) return next(err)
-    res.send('exercises cleared')
+  app.get('/clearusers', (req, res, next) => {
+    User.deleteMany({}, err => {
+      if (err) next(err)
+      res.send('users cleared')
+    })
   })
-})
+
+  app.get('/clearexercises', (req, res, next) => {
+    Exercise.deleteMany({}, err => {
+      if (err) return next(err)
+      res.send('exercises cleared')
+    })
+  })
+}
+
+exerciseTracker(mongoose)
 
 app.use((req, res, next) => {
   next({ status: 404, message: 'not found' })
