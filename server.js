@@ -53,7 +53,7 @@ function exerciseTracker (mongoose) {
 
   const T120000 = 'T12:00:00'
 
-  router.post('/api/exercise/new-user', (req, res, next) => {
+  router.post('/new-user', (req, res, next) => {
     User.findOne({ username: req.body.username }, (err, user) => {
       if (err) return next(err)
       if (user) return next(new Error('username taken'))
@@ -65,7 +65,7 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  router.get('/api/exercise/users', (req, res, next) => {
+  router.get('/users', (req, res, next) => {
     User.find({})
       .select('_id username')
       .sort('username')
@@ -76,7 +76,7 @@ function exerciseTracker (mongoose) {
       })
   })
 
-  router.post('/api/exercise/add', (req, res, next) => {
+  router.post('/add', (req, res, next) => {
     if (!req.body.userId) return next(new Error('userId required'))
     User.findById({ _id: req.body.userId }, (err, user) => {
       if (err) return next(err)
@@ -99,7 +99,7 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  router.get('/api/exercise/log', (req, res, next) => {
+  router.get('/log', (req, res, next) => {
     const { userId, from, to, limit } = req.query
     if (!userId) return next(new Error('userId required'))
     User.findById({ _id: userId }, (err, user) => {
@@ -130,14 +130,14 @@ function exerciseTracker (mongoose) {
     })
   })
 
-  router.get('/clearusers', (req, res, next) => {
+  router.get('/clear-users', (req, res, next) => {
     User.deleteMany({}, err => {
       if (err) next(err)
       res.send('users cleared')
     })
   })
 
-  router.get('/clearexercises', (req, res, next) => {
+  router.get('/clear-exercises', (req, res, next) => {
     Exercise.deleteMany({}, err => {
       if (err) return next(err)
       res.send('exercises cleared')
@@ -147,7 +147,7 @@ function exerciseTracker (mongoose) {
   return router
 }
 
-app.use('/', exerciseTracker(mongoose))
+app.use('/api/exercise', exerciseTracker(mongoose))
 
 app.use((req, res, next) => {
   next({ status: 404, message: 'not found' })
