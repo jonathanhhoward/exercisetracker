@@ -54,10 +54,11 @@ function exerciseTracker (mongoose) {
   const T120000 = 'T12:00:00'
 
   router.post('/new-user', (req, res, next) => {
-    User.findOne({ username: req.body.username }, (err, user) => {
+    const { username } = req.body
+    User.findOne({ username: username }, (err, user) => {
       if (err) return next(err)
       if (user) return next(new Error('username taken'))
-      user = new User({ username: req.body.username })
+      user = new User({ username: username })
       user.save(err => {
         if (err) return next(err)
         res.json({ username: user.username, _id: user._id })
