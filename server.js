@@ -80,8 +80,8 @@ app.post('/api/exercise/add', (req, res, next) => {
     }, (err, exercise) => {
       if (err) return next(err)
       res.json({
-        _id: user._id,
         username: user.username,
+        userId: exercise.userId,
         description: exercise.description,
         duration: exercise.duration,
         date: exercise.date.toDateString()
@@ -90,13 +90,36 @@ app.post('/api/exercise/add', (req, res, next) => {
   })
 })
 
-// app.get('/api/exercise/log', () => {
-//   // unknown _id
-//   // {"_id":"rkR9FOppS","username":"asdfdsfdfffd","count":0,"log":[]}
-//   // {"_id":"H1DAaL3Tr","username":"Probiotic","count":2,"log":[{"description":"walk","duration":10,"date":"Wed Dec 11 2019"},{"description":"run","duration":5,"date":"Wed Dec 11 2019"}]}
-//   // {"_id":"H1DAaL3Tr","username":"Probiotic","from":"Tue Nov 05 2019","count":3,"log":[{"description":"walk","duration":1.3,"date":"Wed Dec 11 2019"},{"description":"walk","duration":10,"date":"Wed Dec 11 2019"},{"description":"run","duration":5,"date":"Wed Dec 11 2019"}]}
-//   // {"_id":"H1DAaL3Tr","username":"Probiotic","from":"Tue Jan 01 2019","count":1,"log":[{"description":"walk","duration":1.3,"date":"Wed Dec 11 2019"}]}
-// })
+app.get('/api/exercise/log', (req, res, next) => {
+  const { userId, from, to, limit } = req.query
+  if (!userId) return next(new Error('userId required'))
+  User.findById({ _id: userId }, (err, user) => {
+    if (err) return next(err)
+    if (!user) return next(new Error('user not found'))
+    const query = Exercise.find({ userId: user._id })
+    if (from || to) {
+      query.where('date')
+      if (from) query.gte(from + 'T12:00:00')
+      if (to) query.lte(to + 'T12:00:00')
+    }
+    if (limit) query.limit(Number(limit))
+    query.exec((err, exercises) => {
+      if (err) return next(err)
+      res.json({
+        _id: user._id,
+        username: user.username,
+        from: from,
+        to: to,
+        count: exercises.length,
+        log: exercises.map(exercise => ({
+          description: exercise.description,
+          duration: exercise.duration,
+          date: exercise.date.toDateString()
+        }))
+      })
+    })
+  })
+})
 
 app.get('/clearusers', (req, res, next) => {
   User.deleteMany({}, err => {
