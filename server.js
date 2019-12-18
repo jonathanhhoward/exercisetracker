@@ -157,7 +157,6 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   let errCode, errMessage
-
   if (err.errors) {
     errCode = 400
     const keys = Object.keys(err.errors)
@@ -166,8 +165,7 @@ app.use((err, req, res, next) => {
     errCode = err.status || 500
     errMessage = err.message || 'Internal Server Error'
   }
-  res.status(errCode).type('txt')
-    .send(errMessage)
+  res.status(errCode).type('txt').send(errMessage)
 })
 
 const server = app.listen(process.env.PORT || 3000, () => {
