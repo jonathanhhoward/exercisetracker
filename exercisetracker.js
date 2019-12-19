@@ -1,6 +1,6 @@
-module.exports = (mongoose) => {
-  const router = require('express').Router()
+const router = require('express').Router()
 
+module.exports = (mongoose) => {
   const User = mongoose.model(
     'User',
     new mongoose.Schema({
