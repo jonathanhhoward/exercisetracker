@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const exerciseTracker = require('./exercisetracker')
+const exerciseRouter = require('./routes/exercise-router')
 const express = require('express')
 const mongoose = require('mongoose')
 
@@ -11,11 +11,11 @@ const app = express()
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).catch(err => console.error('new connection error:', err))
+}).catch(console.error)
 
 mongoose.connection
   .on('error', console.error.bind(console, 'connection error:'))
-  .once('open', () => console.log('Mongoose connected'))
+  .once('open', () => console.log('Database connected'))
 
 app.use(cors())
 
@@ -25,7 +25,7 @@ app.use(bodyParser.json())
 app.use(express.static('public'))
 app.get('/', (req, res) => res.sendFile(__dirname + '/views/index.html'))
 
-app.use('/api/exercise', exerciseTracker(mongoose))
+app.use('/api/exercise', exerciseRouter)
 
 app.use((req, res, next) => {
   next({ status: 404, message: 'not found' })
