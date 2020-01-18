@@ -22,11 +22,7 @@ exports.listUsers = (req, res, next) => {
     .sort('username')
     .exec((err, users) => {
       if (err) return next(err)
-      if (users.length === 0) {
-        const error = new Error('users not found')
-        error.status = 404
-        return next(error)
-      }
+      if (!users.length) return next(new Error('users not found'))
       res.json(users)
     })
 }
