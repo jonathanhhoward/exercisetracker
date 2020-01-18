@@ -17,12 +17,16 @@ exports.createUser = (req, res, next) => {
 }
 
 exports.listUsers = (req, res, next) => {
-  User.find({})
+  User.find()
     .select('_id username')
     .sort('username')
     .exec((err, users) => {
       if (err) return next(err)
-      if (!users.length) return next(new Error('users not found'))
+      if (users.length === 0) {
+        const error = new Error('users not found')
+        error.status = 404
+        return next(error)
+      }
       res.json(users)
     })
 }
