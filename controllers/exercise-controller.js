@@ -1,8 +1,6 @@
 const User = require('../models/user')
 const Exercise = require('../models/exercise')
 
-const T120000 = 'T12:00:00'
-
 exports.createUser = (req, res, next) => {
   const { username } = req.body
   User.findOne({ username: username }, (err, user) => {
@@ -38,7 +36,7 @@ exports.addExercise = (req, res, next) => {
     Exercise.create({
       ...req.body,
       date: date
-        ? new Date(date + T120000)
+        ? new Date(date)
         : new Date()
     }, (err, exercise) => {
       if (err) return next(err)
@@ -62,8 +60,8 @@ exports.showUserLog = (req, res, next) => {
     const query = Exercise.find({ userId: user._id })
     if (from || to) {
       query.where('date')
-      if (from) query.gte(from + T120000)
-      if (to) query.lte(to + T120000)
+      if (from) query.gte(from)
+      if (to) query.lte(to)
     }
     if (limit) query.limit(Number(limit))
     query.exec((err, exercises) => {
