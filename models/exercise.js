@@ -4,7 +4,7 @@ const Schema = mongoose.Schema
 module.exports = mongoose.model(
   'Exercise',
   new Schema({
-    userId: { type: String, required: true, minlength: 1 },
+    userId: { type: Schema.Types.ObjectId, required: true },
     description: { type: String, required: true },
     duration: {
       type: Number,
