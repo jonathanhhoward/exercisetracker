@@ -8,11 +8,13 @@ exports.createUser = (req, res, next) => {
   User.findOne({ username: username }, (err, user) => {
     if (err) return next(err)
     if (user) return next(new Error('username taken'))
-    user = new User({ username: username })
-    user.save(err => {
-      if (err) return next(err)
-      res.json({ username: user.username, _id: user._id })
-    })
+    User.create(
+      { username: username },
+      (err, newUser) => {
+        if (err) return next(err)
+        res.json({ username: newUser.username, _id: newUser._id })
+      }
+    )
   })
 }
 
