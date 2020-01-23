@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/slipskid/exercisetracker.git"
+    "url": "git+https://github.com/jonathanhhoward/exercisetracker.git"
   },
   "author": "Jonathan Howard",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/slipskid/exercisetracker/issues"
+    "url": "https://github.com/jonathanhhoward/exercisetracker/issues"
   },
-  "homepage": "https://github.com/slipskid/exercisetracker#readme",
+  "homepage": "https://jhhoward-exercisetracker.glitch.me/",
   "dependencies": {
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
